@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Commerce</title>
+</head>
+
+  <div id="app">
+    <header>
+    <h3>PlatziCommerce</h3>
+    <button class="cart" v-on:click="cartOpen = !cartOpen">Carro ({{ cart.length }})</button>
+    <div class="cart-content" v-show="cartOpen">
+    <div
+                v-for="(prodCart, index) in cart"
+                :key="prodCart.name"
+                class="cart-content__product"
+                :class="{ 'bg-gray': index & 1 }"
+              >
+    <img v-bind:src="prodCart.images[0].thumbnail" :alt="prodCart.name.toUpperCase()" />
+    <span>
+    {{ prodCart.name }} - $ {{ new Intl.NumberFormat("es-CO").format(prodCart.price *
+    prodCart.quantity) }} ({{ prodCart.quantity }})
+    </span>
+    </div>
+    <p>Total: $ {{ new Intl.NumberFormat("es-CO").format(total) }}</p>
+    </div>
+    </header>
+    <div class="product-search">
+      <input
+        type="text"
+        placeholder="Buscar producto..."
+        v-model="filtro"
+      />
+    </div>
+    <main>
+    <product
+              v-for="product in products"
+              :key="product.name"
+              :product="product"
+              @sendtocart="addToCart($event)"
+            ></product>
+    </main>
+    </div>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script>
+          const { createApp, ref, reactive, toRefs, watch, computed, onMounted } = Vue;
+    
+          const app = createApp({
+            setup() {
+              const products = ref([]);
+    
+              const cartState = reactive({
+                cartOpen: false,
+                cart: [],
+                total: computed(() =>
+                  cartState.cart.reduce((prev, curr) => {
+                    const prevPrice = prev.price || prev;
+                    const prevQuantity = prev.quantity || 1;
+                    return prevPrice * prevQuantity + curr.price * curr.quantity;
+                  }, 0)
+                )
+                // total: 0
+              });
+              function addToCart(product) {
+                const prodIndex = cartState.cart.findIndex(prod => prod.name === product.name);
+                if (prodIndex >= 0) {
+                  cartState.cart[prodIndex].quantity += 1;
+                } else {
+                  cartState.cart.push(product);
+                }
+                product.stock -= 1;
+              }
+    
+              /* watch(
+                cartState.cart,
+                (value, oldValue) => {
+                  cartState.total = cartState.cart.reduce((prev, curr) => {
+                    const prevPrice = prev.price || prev;
+                    const prevQuantity = prev.quantity || 1;
+                    return prevPrice * prevQuantity + curr.price * curr.quantity;
+                  }, 0);
+                }
+                // {
+                //   deep: true
+                // }
+              ); */
+    
+              /* onMounted(() => {
+                fetch("https://my-json-server.typicode.com/iosamuel/demo/products")
+                  .then(res => res.json())
+                  .then(data => {
+                    products.value = data;
+                  });
+              }); */
+    
+              // setup() === created()
+              fetch("https://my-json-server.typicode.com/iosamuel/demo/products")
+                .then(res => res.json())
+                .then(data => {
+                  products.value = data;
+                });
+    
+              return {
+                ...toRefs(cartState),
+    
+                addToCart,
+    
+                products
+              };
+            }
+          });
+        </script>
+    <script src="./Product.js"></script>
+    <script>
+          app.mount("#app");
+        </script>
+    
+</body>
+</html>
